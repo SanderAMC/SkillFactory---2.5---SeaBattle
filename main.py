@@ -47,7 +47,7 @@ class Ship():
         self.dir = direct
         self.lives = length
 
-#Возвращает список точек корабля
+# Возвращает список точек корабля
     @property
     def shipdots(self):
         dots = []
@@ -61,7 +61,7 @@ class Ship():
                 y_ += 1
         return dots
 
-#Возвращает True, если произвольная точка в списке точек корабля
+# Возвращает True, если произвольная точка в списке точек корабля
     def isshooten(self, point):
         return (point in self.shipdots)
 
@@ -77,7 +77,7 @@ class Board():
         self.busydots = []
         self.ships = []
 
-#Добавляет корабль на доску
+# Добавляет корабль на доску
     def add_ship(self, ship):
         for d in ship.shipdots:
             if self.isoutboard(d) or d in self.busydots:
@@ -90,7 +90,7 @@ class Board():
         self.ships.append(ship)
         self.contour(ship)
 
-#Определяет точки вокруг корабля, его контур
+# Определяет точки вокруг корабля, его контур
     def contour(self, ship, verb=False):
         near = [
             (-1, -1), (-1, 0), (-1, 1),
@@ -106,11 +106,11 @@ class Board():
                         self.board[cur.x][cur.y] = "∙"
                     self.busydots.append(cur)
 
-#Определяет, что точка вне игрового поля
+# Определяет, что точка вне игрового поля
     def isoutboard(self, point):
         return not (0 <= point.x < self.boardsize and 0 <= point.y < self.boardsize)
 
-#Делает "выстрел" в точку текущей доски
+# Делает "выстрел" в точку текущей доски
     def shot(self, point):
         if self.isoutboard(point):
             raise BoardOutException()
@@ -162,7 +162,7 @@ class Player():
 
 class Ai_Player(Player):
 
-#Определяет ход компьютера. Выбор либо из всех свободных полей, либо из полей вокруг недобитого корабля
+# Определяет ход компьютера. Выбор либо из всех свободных полей, либо из полей вокруг недобитого корабля
     def ask(self):
         self.get_pref_moves()
         if len(self.pref_moves) > 0:
@@ -174,7 +174,7 @@ class Ai_Player(Player):
         print(f"Ход компьютера: {d.x+1} {d.y+1}")
         return d
 
-#Определяет предпочтительные точки для выстрела компьютера, если есть недобитый корабль
+# Определяет предпочтительные точки для выстрела компьютера, если есть недобитый корабль
     def get_pref_moves(self):
         self.pref_moves = []
         pref_h = [(0, -1), (0, 1)]
@@ -211,7 +211,7 @@ class Ai_Player(Player):
 
         return
 
-#Определяет все доступные, неподстреленные ранее точки доски
+# Определяет все доступные, неподстреленные ранее точки доски
     def get_free_moves(self):
         self.pref_moves = []
         for x in range(self.enemy_board.boardsize):
@@ -263,7 +263,7 @@ class Game():
         self.Ai = Ai_Player(self.userboard)
         pass
 
-#Вывод полей игрока и компьютера
+# Вывод полей игрока и компьютера
     def __str__(self):
         print("    Поле игрока" + " " * 4 * self.size + "Поле компьютера")
         print("-" * (4 * self.size + 3) * 2 + "-" * 8)
@@ -293,7 +293,7 @@ class Game():
             board = self.fillboard()
         return board
 
-#Заполнение доски компьютера и игрока кораблями
+# Заполнение доски компьютера и игрока кораблями
     def fillboard(self):
         lens = self.squadron
         board = Board(self.size)
@@ -331,7 +331,7 @@ class Game():
         print("Внимание! Компьютер не прощает ошибок, он добивает уже подбитый корабль!")
         print("-" * (4 * self.size + 3) * 2 + "-" * 8)
 
-#Основной игровой цикл
+# Основной игровой цикл
     def loop(self):
         num = 0
         while True:
@@ -373,6 +373,7 @@ class Game():
 
 
 if __name__ == "__main__":
-#Создается игра, указан размер поля и список длин кораблей
+# Создается игра, указан размер поля и список длин кораблей
+
     g = Game(9, [4, 3, 3, 2, 2, 2, 1, 1, 1, 1])
     g.start()
