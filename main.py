@@ -1,24 +1,31 @@
 import random
+import sys
+
 
 class BoardExceptions(Exception):
     def __str__(self):
         return "Какой-то странный exception."
 
+
 class BoardOutException(BoardExceptions):
     def __str__(self):
         return "Выстрел мимо доски"
+
 
 class UserInputException(BoardExceptions):
     def __str__(self):
         return "Неправильный ввод. Пожалуйста повторите."
 
+
 class BoardAlreadyException(BoardExceptions):
     def __str__(self):
         return "Уже стреляли сюда, повторите ввод."
 
+
 class BoardShipPlaceException(BoardExceptions):
     def __str__(self):
         return "Что-то не так с размещением корабля."
+
 
 class Dot():
 
@@ -30,7 +37,8 @@ class Dot():
         return self.x == other.x and self.y == other.y
 
     def __repr__(self):
-        return f"Point({self.x}, {self.y})"
+        return f"P({self.x}, {self.y})"
+
 
 class Ship():
     def __init__(self, cone, length, direct):
@@ -39,6 +47,7 @@ class Ship():
         self.dir = direct
         self.lives = length
 
+#Возвращает список точек корабля
     @property
     def shipdots(self):
         dots = []
@@ -52,22 +61,23 @@ class Ship():
                 y_ += 1
         return dots
 
+#Возвращает True, если произвольная точка в списке точек корабля
     def isshooten(self, point):
         return (point in self.shipdots)
 
+
 class Board():
-    def __init__(self, size, hide = False):
+    def __init__(self, size, hide=False):
         self.boardsize = size
         self.hide = hide
         self.hitships = 0
-
-        self.board = [["_"]*self.boardsize for _ in range(self.boardsize) ]
+        self.live_ships = 0
+        self.board = [["_"]*self.boardsize for _ in range(self.boardsize)]
 
         self.busydots = []
         self.ships = []
 
-        self.live_ships = 0
-
+#Добавляет корабль на доску
     def add_ship(self, ship):
         for d in ship.shipdots:
             if self.isoutboard(d) or d in self.busydots:
@@ -80,7 +90,8 @@ class Board():
         self.ships.append(ship)
         self.contour(ship)
 
-    def contour(self, ship, verb = False):
+#Определяет точки вокруг корабля, его контур
+    def contour(self, ship, verb=False):
         near = [
             (-1, -1), (-1, 0), (-1, 1),
             (0, -1), (0, 0), (0, 1),
@@ -95,9 +106,11 @@ class Board():
                         self.board[cur.x][cur.y] = "∙"
                     self.busydots.append(cur)
 
+#Определяет, что точка вне игрового поля
     def isoutboard(self, point):
         return not (0 <= point.x < self.boardsize and 0 <= point.y < self.boardsize)
 
+#Делает "выстрел" в точку текущей доски
     def shot(self, point):
         if self.isoutboard(point):
             raise BoardOutException()
@@ -119,7 +132,7 @@ class Board():
                     print("Корабль уничтожен!")
                     return True
                 else:
-                    print("Корабль ранен!")
+                    print("Корабль подбит!")
                     return True
 
         self.board[point.x][point.y] = "∙"
@@ -128,6 +141,7 @@ class Board():
 
     def begin(self):
         self.busydots = []
+
 
 class Player():
 
@@ -145,12 +159,12 @@ class Player():
             except BoardAlreadyException as e:
                 print(e)
 
+
 class Ai_Player(Player):
 
+#Определяет ход компьютера. Выбор либо из всех свободных полей, либо из полей вокруг недобитого корабля
     def ask(self):
         self.get_pref_moves()
-#        print("Желательные ходы компа ", self.pref_moves)
-
         if len(self.pref_moves) > 0:
             d = random.choice(self.pref_moves)
         else:
@@ -160,27 +174,50 @@ class Ai_Player(Player):
         print(f"Ход компьютера: {d.x+1} {d.y+1}")
         return d
 
+#Определяет предпочтительные точки для выстрела компьютера, если есть недобитый корабль
     def get_pref_moves(self):
         self.pref_moves = []
-        pref = [ (-1, 0), (0, -1), (0, 1), (1, 0) ]
+        pref_h = [(0, -1), (0, 1)]
+        pref_v = [(-1, 0), (1, 0)]
+        pref = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
         for x in range(self.enemy_board.boardsize):
             for y in range(self.enemy_board.boardsize):
+                orient = -1
                 if self.enemy_board.board[x][y] == "X":
-                    for dx, dy in pref:
+                    for dx, dy in pref_v:
                         cur = Dot(x + dx, y + dy)
-                        if not (self.enemy_board.isoutboard(cur)) and cur not in self.enemy_board.busydots:
-                            self.pref_moves.append(cur)
+                        if not (self.enemy_board.isoutboard(cur)) and self.enemy_board.board[x + dx][y + dy] == "X":
+                            orient = 1
+                        if orient == 1:
+                            cur = Dot(x - dx, y)
+                            if not (self.enemy_board.isoutboard(cur)) and cur not in self.enemy_board.busydots:
+                                self.pref_moves.append(cur)
+
+                    for dx, dy in pref_h:
+                        cur = Dot(x + dx, y + dy)
+                        if not (self.enemy_board.isoutboard(cur)) and self.enemy_board.board[x + dx][y + dy] == "X":
+                            orient = 0
+                        if orient == 0:
+                            cur = Dot(x, y - dy)
+                            if not (self.enemy_board.isoutboard(cur)) and cur not in self.enemy_board.busydots:
+                                self.pref_moves.append(cur)
+
+                    if orient == -1:
+                        for dx, dy in pref:
+                            cur = Dot(x + dx, y + dy)
+                            if not (self.enemy_board.isoutboard(cur)) and cur not in self.enemy_board.busydots:
+                                self.pref_moves.append(cur)
 
         return
 
+#Определяет все доступные, неподстреленные ранее точки доски
     def get_free_moves(self):
         self.pref_moves = []
-
         for x in range(self.enemy_board.boardsize):
             for y in range(self.enemy_board.boardsize):
                 if not (self.enemy_board.isoutboard(Dot(x, y))) and Dot(x, y) not in self.enemy_board.busydots:
-                            self.pref_moves.append(Dot(x, y))
+                    self.pref_moves.append(Dot(x, y))
 
         return
 
@@ -189,17 +226,34 @@ class User(Player):
 
     def ask(self):
         while True:
-            cords = input("Ваш ход: ").split()
+            cords = input("Введите строку и столбец для выстрела, через пробел. Ваш ход: ").split()
+
+            if len(cords) == 1 and cords[0].isdigit() and int(cords[0]) == 0:
+                print("До свидания!")
+                sys.exit()
 
             if len(cords) < 2 or not cords[0].isdigit() or not cords[1].isdigit() or int(cords[0]) > self.enemy_board.boardsize or int(cords[1]) > self.enemy_board.boardsize:
-                print("Не ошибайтесь при вводе.")
+                print("Вы ввели некорректные данные. Не ошибайтесь при вводе.")
                 continue
 
             return Dot(int(cords[0]) - 1, int(cords[1]) - 1)
 
+
 class Game():
 
     def __init__(self, size, ships):
+        if size < 4 or size > 9:
+            print("Допустимо поле от 4х4, не более 9х9.")
+            sys.exit()
+        sum_ = 0
+        for i in ships:
+            sum_ += int(i) + 2
+
+        if sum_ > size * size:
+            print(f"Всего клеток {size ** 2}, для кораблей нужно {sum_}.")
+            print("Не смогу разместить столько кораблей.")
+            sys.exit()
+
         self.size = size
         self.squadron = ships
         self.userboard = self.randomboard()
@@ -209,8 +263,8 @@ class Game():
         self.Ai = Ai_Player(self.userboard)
         pass
 
+#Вывод полей игрока и компьютера
     def __str__(self):
-
         print("    Поле игрока" + " " * 4 * self.size + "Поле компьютера")
         print("-" * (4 * self.size + 3) * 2 + "-" * 8)
         res = "  |"
@@ -219,8 +273,6 @@ class Game():
         res = res + " " * 10 + "|"
         for i in range(1, self.aiboard.boardsize + 1):
             res = res + " " + str(i) + " |"
-
-
 
         for i in range(self.size):
 
@@ -241,6 +293,7 @@ class Game():
             board = self.fillboard()
         return board
 
+#Заполнение доски компьютера и игрока кораблями
     def fillboard(self):
         lens = self.squadron
         board = Board(self.size)
@@ -249,7 +302,7 @@ class Game():
 
             attempts = 0
             while True:
-                if attempts > 2000:
+                if attempts > 20:
                     return None
 
                 d = Dot(random.randint(0, self.size), random.randint(0, self.size))
@@ -267,32 +320,45 @@ class Game():
         return board
 
     def greet(self):
-        print("Морской бой. х - строка, у - столбец")
+        print("Морской бой. Человек vs Компьютер")
+        print("Правила:")
+        print("1. Человек ходит первым.")
+        print("2. Указывается строка и столбец для выстрела по вражескому полю.")
+        print("3. Если нет попадания, переход хода к другому игроку.")
+        print("4. Если попали, делаете еще ход.")
+        print("5. Игра заканчивается, когда все корабли игрока потоплены.")
+        print("-" * (4 * self.size + 3) * 2 + "-" * 8)
+        print("Внимание! Компьютер не прощает ошибок, он добивает уже подбитый корабль!")
+        print("-" * (4 * self.size + 3) * 2 + "-" * 8)
 
+#Основной игровой цикл
     def loop(self):
         num = 0
         while True:
             print(self)
 
             if num % 2 == 0:
-                print("-" * 20)
-                print("Ходит пользователь!")
+                print("-" * (4 * self.size + 3) * 2 + "-" * 8)
+                print("Ход игрока!")
                 repeat = self.User.move()
             else:
-                print("-" * 20)
-                print("Ходит компьютер!")
+                print("-" * (4 * self.size + 3) * 2 + "-" * 8)
+                print("Ход компьютера!")
                 repeat = self.Ai.move()
 
-            print(f"У игрока осталось {self.userboard.live_ships} подбито {self.userboard.hitships}, у компа осталось {self.aiboard.live_ships} подбито {self.aiboard.hitships}.")
+            print("-" * (4 * self.size + 3) * 2 + "-" * 8)
+            print(f"У игрока осталось {self.userboard.live_ships} кораблей, уже подбито {self.userboard.hitships}")
+            print(f"У компьютера осталось {self.aiboard.live_ships} кораблей, уже подбито {self.aiboard.hitships}.")
+            print("-" * (4 * self.size + 3) * 2 + "-" * 8)
 
-            if self.aiboard.hitships == 7:
-                print("-" * 20)
-                print("Пользователь выиграл!")
+            if self.aiboard.live_ships == 0:
+                print("-" * (4 * self.size + 3) * 2 + "-" * 8)
+                print("Игрок выиграл, поздравляем!")
                 print(self)
                 break
 
-            if self.userboard.hitships == 7:
-                print("-" * 20)
+            if self.userboard.live_ships == 0:
+                print("-" * (4 * self.size + 3) * 2 + "-" * 8)
                 print("Компьютер выиграл!")
                 print(self)
                 break
@@ -307,6 +373,6 @@ class Game():
 
 
 if __name__ == "__main__":
-
-    g = Game(9, [3, 2, 2, 1, 1, 1, 1])
+#Создается игра, указан размер поля и список длин кораблей
+    g = Game(9, [4, 3, 3, 2, 2, 2, 1, 1, 1, 1])
     g.start()
