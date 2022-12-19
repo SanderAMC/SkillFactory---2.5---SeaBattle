@@ -295,20 +295,16 @@ class Game():
 
 # Заполнение доски компьютера и игрока кораблями
     def fillboard(self):
-        lens = self.squadron
+#        lens = self.squadron
         board = Board(self.size)
 
-        for l in lens:
+        for sq in self.squadron:
 
             attempts = 0
             while True:
                 if attempts > 20:
                     return None
-
-                d = Dot(random.randint(0, self.size), random.randint(0, self.size))
-                v = random.randint(0, 1)
-
-                ship = Ship(d, l, v)
+                ship = Ship(Dot(random.randint(0, self.size), random.randint(0, self.size)), sq, random.randint(0, 1))
                 try:
                     board.add_ship(ship)
                     break
